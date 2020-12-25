@@ -1,4 +1,4 @@
-import {Layout, DatePicker, InputNumber, Table, Row, Col} from 'antd';
+import {Layout, DatePicker, Input, InputNumber, Table, Row, Col, Statistic, Form} from 'antd';
 import 'antd/dist/antd.css';
 import './App.css';
 
@@ -28,17 +28,34 @@ const columns = [
 
 const App = () => {
     const [debt, setDebt] = useState(1);
+    const [month, setMonth] = useState(12);
     const [graceEndDate, setGraceEndDate] = useState(new Date());
     const [predictions, setPredictions] = useState([]);
 
+    const calculatePredictions = () => {
+        const predictions = calculatePaymentPredictions(debt, graceEndDate, month);
+        setPredictions(predictions);
+    };
+
+    const onMonthChange = (value) => {
+        setMonth(value);
+        // if(month !== value){
+        //     calculatePredictions();
+        // }
+    };
+
     const onDebtChange = (value) => {
-        setDebt(value);
-        console.log("Set debt: ", value);
+        setDebt(value)
+        // if(debt !== value){
+        //     calculatePredictions();
+        // }
     };
 
     const onDateChange = (value) => {
-        const predictions = calculatePaymentPredictions(debt, value._d);
-        setPredictions(predictions);
+        setGraceEndDate(value._d);
+        if(graceEndDate !== value){
+            calculatePredictions();
+        }
     };
 
     const getTotalOverpayment = () => {
@@ -51,13 +68,19 @@ const App = () => {
             <Layout>
                 <Content>
                     <Row gutter={16}>
-                        <Col>
-                            <label>Enter Debt value</label>
-                            <InputNumber min={1} suffix={"RUB"} step={1} onChange={onDebtChange}/>
-                        </Col>
-                        <Col>
-                            <label>Select grace end date</label>
-                            <DatePicker onChange={onDateChange}/>
+                        <Col span={24}>
+                            <Form
+                                layout={"inline"}>
+                                <Form.Item label={"Enter debt value"}>
+                                    <Input type={"number"} min={1} suffix={"RUB"} step={1} onChange={onDebtChange}/>
+                                </Form.Item>
+                                <Form.Item label={"Months count"}>
+                                    <InputNumber defaultValue={month} min={1} max={60} step={1} onChange={onMonthChange}/>
+                                </Form.Item>
+                                <Form.Item label={"Select grace end date"}>
+                                    <DatePicker onChange={onDateChange}/>
+                                </Form.Item>
+                            </Form>
                         </Col>
                     </Row>
                     <Row>
@@ -65,9 +88,8 @@ const App = () => {
                             <Table
                                 dataSource={predictions}
                                 columns={columns}
-                                footer={() => `Total overpayment: ${
-                                    predictions.length > 0 ? getTotalOverpayment() : 0
-                                } RUB`}
+                                pagination={{pageSize: month, position: ['none', 'none']}}
+                                footer={() => <Statistic title="Total overpayment" value={`${predictions.length > 0 ? getTotalOverpayment().toFixed(2) : 0} RUB`} />}
                             />
                         </Col>
                     </Row>
